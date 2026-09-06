@@ -1,5 +1,4 @@
 import Image from "next/image";
-import Link from "next/link";
 import {
   AMENITY_LABELS,
   DOG_SIZE_LABELS,
@@ -10,6 +9,7 @@ import {
   type Space,
 } from "@/lib/domain/catalog";
 import { isOvernightIntent, type StayIntent } from "@/lib/domain/stay";
+import { TrackedSpaceLink } from "./tracked-space-link";
 
 type SpaceCardProps = {
   space: Space;
@@ -31,7 +31,7 @@ export function SpaceCard({ space, intent }: SpaceCardProps) {
 
   return (
     <article className="group overflow-hidden rounded-3xl border border-emerald-950/10 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
-      <Link aria-label={`Conhecer ${space.name}`} className="block" href={href}>
+      <TrackedSpaceLink ariaLabel={`Conhecer ${space.name}`} className="block" href={href} spaceSlug={space.slug} zone={space.zone}>
         <div className="relative aspect-[4/3] overflow-hidden bg-emerald-100">
           <Image
             alt={space.imageAlt}
@@ -72,7 +72,7 @@ export function SpaceCard({ space, intent }: SpaceCardProps) {
             ))}
           </div>
         </div>
-      </Link>
+      </TrackedSpaceLink>
     </article>
   );
 }

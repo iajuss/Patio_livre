@@ -1,8 +1,17 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
+import { afterEach, beforeEach, vi } from "vitest";
 import SpaceDetailPage from "./page";
 
 const renderDetail = async (slug: string, query: Record<string, string> = {}) =>
   render(await SpaceDetailPage({ params: Promise.resolve({ slug }), searchParams: Promise.resolve(query) }));
+
+beforeEach(() => {
+  vi.stubGlobal("fetch", vi.fn(async (_input: RequestInfo | URL, _init?: RequestInit) => new Response(null, { status: 204 })));
+});
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
 
 test("na intenção de hospedagem o detalhe pede uma estadia", async () => {
   await renderDetail("casa-do-tremembe", { uso: "hospedagem" });
@@ -44,4 +53,18 @@ test("mostra o tipo de espaço e os períodos que ele recebe", async () => {
   expect(screen.getByText("Quintal")).toBeInTheDocument();
   expect(screen.getByText("Períodos que recebe")).toBeInTheDocument();
   expect(screen.getByText("Manhã")).toBeInTheDocument();
+});
+
+test("abertura do detalhe registra a visualização do espaço", async () => {
+  const fetchSpy = vi.fn(async (_input: RequestInfo | URL, _init?: RequestInit) => new Response(null, { status: 204 }));
+  vi.stubGlobal("fetch", fetchSpy);
+
+  await renderDetail("quintal-da-praca");
+
+  await waitFor(() => expect(fetchSpy).toHaveBeenCalledTimes(1));
+  const body = JSON.parse(String(fetchSpy.mock.calls[0][1]?.body));
+  expect(body).toMatchObject({
+    eventName: "space_viewed",
+    context: { spaceSlug: "quintal-da-praca", zone: "Oeste" },
+  });
 });

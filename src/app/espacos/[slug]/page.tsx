@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ApproximateMap } from "@/components/approximate-map";
 import { BrandLogo } from "@/components/brand-logo";
+import { SpaceViewTracker } from "@/components/space-view-tracker";
 import {
   AMENITY_LABELS,
   DOG_SIZE_LABELS,
@@ -58,6 +59,7 @@ export default async function SpaceDetailPage({ params, searchParams }: SpaceDet
 
   return (
     <main className="min-h-screen bg-[#f8f4eb] px-5 py-6 sm:px-8 lg:px-12">
+      <SpaceViewTracker spaceSlug={space.slug} zone={space.zone} />
       <header className="mx-auto flex max-w-6xl items-center justify-between gap-4">
         <BrandLogo />
         <Link className="text-sm font-bold text-emerald-900 underline underline-offset-4" href="/espacos">
