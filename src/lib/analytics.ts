@@ -1,10 +1,12 @@
 import { filtersFromSearchParams } from "./domain/filters";
-import { CATALOG_NEIGHBORHOODS, DOG_SIZES, TIME_SLOTS, USE_TYPES, ZONES } from "./domain/catalog";
+import { CATALOG_NEIGHBORHOODS, DOG_SIZES, SPACES, TIME_SLOTS, USE_TYPES, ZONES } from "./domain/catalog";
 import { STAY_INTENTS } from "./domain/stay";
 
-export const FUNNEL_EVENTS = ["search_started", "filters_changed", "space_viewed", "region_interest_clicked", "interest_submitted", "interest_confirmed"] as const;
+export const FUNNEL_EVENTS = ["search_started", "filters_changed", "space_clicked", "space_viewed", "region_interest_clicked", "interest_submitted", "interest_confirmed"] as const;
 export type FunnelEventName = (typeof FUNNEL_EVENTS)[number];
 export type FunnelEvent = { eventName: FunnelEventName; payload: Record<string, string | number | boolean>; createdAt: string };
+
+const SPACE_EVENTS = new Set<FunnelEventName>(["space_clicked", "space_viewed"]);
 
 const allowedKeys = new Set(["zone", "useType", "dogSize", "dogCount", "timeSlot", "neighborhood", "stayIntent", "spaceSlug", "sourceKind", "utmSource", "utmMedium", "utmCampaign"]);
 
@@ -16,6 +18,7 @@ const FILTER_VALUE_CHECKS: Record<string, (value: unknown) => boolean> = {
   timeSlot: (value) => typeof value === "string" && TIME_SLOTS.includes(value as (typeof TIME_SLOTS)[number]),
   neighborhood: (value) => typeof value === "string" && CATALOG_NEIGHBORHOODS.includes(value),
   stayIntent: (value) => typeof value === "string" && STAY_INTENTS.includes(value as (typeof STAY_INTENTS)[number]),
+  spaceSlug: (value) => typeof value === "string" && SPACES.some((space) => space.slug === value),
 };
 
 /** Converte somente filtros validados do catálogo em dados seguros para o funil. */
@@ -39,7 +42,16 @@ export function buildFunnelEvent(name: FunnelEventName, context: Record<string, 
       allowedKeys.has(key) && ["string", "number", "boolean"].includes(typeof value) && (FILTER_VALUE_CHECKS[key]?.(value) ?? true),
     ),
   ) as FunnelEvent["payload"];
-  return { eventName: name, payload, createdAt: new Date().toISOString() };
+  const event = { eventName: name, payload, createdAt: new Date().toISOString() };
+  return isValidFunnelEvent(event) ? event : { ...event, payload: {} };
+}
+
+/** Eventos de espaço só são úteis quando apontam para a zona real do catálogo. */
+export function isValidFunnelEvent(event: FunnelEvent): boolean {
+  if (!SPACE_EVENTS.has(event.eventName)) return true;
+  const spaceSlug = event.payload.spaceSlug;
+  const zone = event.payload.zone;
+  return typeof spaceSlug === "string" && typeof zone === "string" && SPACES.some((space) => space.slug === spaceSlug && space.zone === zone);
 }
 
 export function getAnonymousSessionId(): string {

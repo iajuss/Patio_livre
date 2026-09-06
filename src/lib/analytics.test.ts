@@ -15,3 +15,15 @@ test("evento não aceita bairro ou intenção fora do catálogo", () => {
 
   expect(event.payload).toEqual({ zone: "Sul" });
 });
+
+test("evento de espaço não aceita um identificador fora do catálogo", () => {
+  const event = buildFunnelEvent("space_viewed", { spaceSlug: "email@exemplo.com" });
+
+  expect(event.payload).toEqual({});
+});
+
+test("evento de espaço exige a zona correspondente ao espaço", () => {
+  const event = buildFunnelEvent("space_clicked", { spaceSlug: "campo-do-sol", zone: "Sul" });
+
+  expect(event.payload).toEqual({});
+});
